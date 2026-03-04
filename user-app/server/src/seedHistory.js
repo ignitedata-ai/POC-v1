@@ -2,7 +2,11 @@
  * seedHistory.js
  *
  * Seeds the database with realistic mock CMS-2567 sessions for demo purposes.
- * Run once: node server/src/seedHistory.js
+ * 3 past surveys from the same facility, all 100% complete POCs.
+ *
+ * Run:
+ *   Local:  cd user-app/server && node src/seedHistory.js
+ *   Docker: docker exec -it tcs-plan-of-correction node /app/user-app/server/src/seedHistory.js
  */
 
 const Database = require('better-sqlite3');
@@ -19,19 +23,17 @@ const STEP_TITLES = [
   'Ongoing Monitoring Plan',
 ];
 
-// Realistic facility data
-const FACILITIES = [
-  { name: 'Sunrise Senior Living Center', address: '1420 Oak Park Blvd, Sacramento, CA 95822', provider: '055123' },
-  { name: 'Maplewood Nursing & Rehab', address: '890 Elm Street, Portland, OR 97205', provider: '382456' },
-  { name: 'Harmony Health Care Facility', address: '3201 River Rd, Nashville, TN 37214', provider: '443789' },
-  { name: 'Golden Years Care Home', address: '567 Magnolia Ave, Austin, TX 78701', provider: '676012' },
-  { name: 'Lakeview Skilled Nursing', address: '2100 Lakeshore Dr, Chicago, IL 60614', provider: '149345' },
-  { name: 'Crestwood Rehabilitation Center', address: '445 Summit Way, Denver, CO 80203', provider: '068678' },
-  { name: 'Pine Ridge Long-Term Care', address: '1789 Forest Ln, Raleigh, NC 27601', provider: '343901' },
-  { name: 'Valley Medical Care Center', address: '920 Valley View Rd, Phoenix, AZ 85004', provider: '039234' },
-];
+// Single facility for all sessions
+const FACILITY = {
+  name: 'Sunrise Senior Living Center',
+  address: '1420 Oak Park Blvd, Sacramento, CA 95822',
+  provider: '055123',
+  building: '2',
+  wing: 'North',
+  accreditingOrg: 'The Joint Commission',
+};
 
-// F-Tags with realistic narratives
+// F-Tags with realistic narratives (10 unique tags)
 const FTAG_DATA = {
   'F-880': {
     narrative: 'Based on observation, interview, and record review, the facility failed to establish and maintain an infection prevention and control program designed to provide a safe, sanitary, and comfortable environment and to help prevent the development and transmission of communicable diseases and infections. Specifically, staff were observed not performing proper hand hygiene between resident contacts on multiple occasions during the survey period. Additionally, shared medical equipment was not properly sanitized between uses.',
@@ -64,7 +66,7 @@ const FTAG_DATA = {
     ],
   },
   'F-578': {
-    narrative: 'Based on interviews, medical record review, the facility failed to honor Resident Identifier #159\'s Advanced Directive for DNR, resulting in inappropriate resuscitative measures. The facility\'s policies titled RESIDENT BILL OF RIGHTS, ADVANCE DIRECTIVES, and Cardio Pulmonary Resuscitation (CPR), the facility failed to honor the resident\'s Advanced Directive for end-of-life wishes.',
+    narrative: 'Based on interviews and medical record review, the facility failed to honor Resident #159\'s Advanced Directive for DNR, resulting in inappropriate resuscitative measures. The facility\'s policies titled RESIDENT BILL OF RIGHTS, ADVANCE DIRECTIVES, and Cardio Pulmonary Resuscitation (CPR) were not followed, and the facility failed to honor the resident\'s end-of-life wishes.',
     severity: 'J', scope: 'Isolated',
     steps: [
       'The facility acknowledges the failure to honor Resident #159\'s Advanced Directive for DNR. Immediate corrective actions included reviewing the medical record to confirm DNR status, notifying the physician, and ensuring all relevant documentation was updated to reflect the resident\'s end-of-life wishes.',
@@ -135,76 +137,53 @@ const FTAG_DATA = {
   },
 };
 
-// Define mock sessions
+// ─── 3 Sessions: same facility, all 100% complete ─────────────────────────────
+// Survey 1: Beginning of last year (Feb 2025)
+// Survey 2: Mid last year (Jul 2025)
+// Survey 3: Last month (Feb 2026)
 const MOCK_SESSIONS = [
   {
-    facility: FACILITIES[0],
-    fileName: 'CMS2567_Sunrise_Jan2026.pdf',
-    surveyDate: '01/15/2026',
-    createdAt: '2026-01-20 09:30:00',
-    fTags: ['F-880', 'F-689', 'F-812'],
-    completionStatus: 'all', // all steps complete
+    fileName: 'CMS2567_Sunrise_Feb2025.pdf',
+    surveyDate: '02/12/2025',
+    createdAt: '2025-02-18 09:30:00',
+    fTags: ['F-880', 'F-689', 'F-578', 'F-812'],
   },
   {
-    facility: FACILITIES[1],
-    fileName: 'CMS2567_Maplewood_Feb2026.pdf',
-    surveyDate: '02/03/2026',
-    createdAt: '2026-02-08 14:15:00',
-    fTags: ['F-684', 'F-655', 'F-725', 'F-758'],
-    completionStatus: 'all',
+    fileName: 'CMS2567_Sunrise_Jul2025.pdf',
+    surveyDate: '07/15/2025',
+    createdAt: '2025-07-20 14:00:00',
+    fTags: ['F-684', 'F-655', 'F-725', 'F-740'],
   },
   {
-    facility: FACILITIES[2],
-    fileName: 'CMS2567_Harmony_Dec2025.pdf',
-    surveyDate: '12/10/2025',
-    createdAt: '2025-12-15 11:00:00',
-    fTags: ['F-578', 'F-689', 'F-686'],
-    completionStatus: 'all',
-  },
-  {
-    facility: FACILITIES[3],
-    fileName: 'CMS2567_GoldenYears_Nov2025.pdf',
-    surveyDate: '11/05/2025',
-    createdAt: '2025-11-10 16:45:00',
-    fTags: ['F-880', 'F-812', 'F-740', 'F-655', 'F-725'],
-    completionStatus: 'partial', // some steps in progress
-  },
-  {
-    facility: FACILITIES[4],
-    fileName: 'CMS2567_Lakeview_Feb2026.pdf',
-    surveyDate: '02/20/2026',
-    createdAt: '2026-02-25 08:20:00',
-    fTags: ['F-689', 'F-686', 'F-758'],
-    completionStatus: 'partial',
-  },
-  {
-    facility: FACILITIES[5],
-    fileName: 'CMS2567_Crestwood_Jan2026.pdf',
-    surveyDate: '01/28/2026',
-    createdAt: '2026-01-31 10:10:00',
-    fTags: ['F-880', 'F-578', 'F-684', 'F-812'],
-    completionStatus: 'all',
-  },
-  {
-    facility: FACILITIES[6],
-    fileName: 'CMS2567_PineRidge_Mar2026.pdf',
-    surveyDate: '02/28/2026',
-    createdAt: '2026-03-02 13:30:00',
-    fTags: ['F-689', 'F-740', 'F-655'],
-    completionStatus: 'none', // not started
-  },
-  {
-    facility: FACILITIES[7],
-    fileName: 'CMS2567_ValleyMedical_Oct2025.pdf',
-    surveyDate: '10/12/2025',
-    createdAt: '2025-10-18 09:00:00',
-    fTags: ['F-880', 'F-689', 'F-684', 'F-578', 'F-725', 'F-686'],
-    completionStatus: 'all',
+    fileName: 'CMS2567_Sunrise_Feb2026.pdf',
+    surveyDate: '02/05/2026',
+    createdAt: '2026-02-10 10:15:00',
+    fTags: ['F-686', 'F-758', 'F-689', 'F-880'],
   },
 ];
 
 function seed() {
-  console.log('Seeding mock history data...\n');
+  console.log('Seeding mock history data...');
+  console.log(`Facility: ${FACILITY.name}`);
+  console.log(`Sessions: ${MOCK_SESSIONS.length} (all 100% complete)\n`);
+
+  // Clear previous seed data (if re-running) — matches both old and new naming
+  const existingMockSessions = db.prepare(
+    `SELECT id FROM sessions WHERE file_name LIKE 'CMS2567_%'`
+  ).all();
+
+  if (existingMockSessions.length > 0) {
+    console.log(`  Clearing ${existingMockSessions.length} existing mock session(s)...`);
+    for (const s of existingMockSessions) {
+      const defIds = db.prepare(`SELECT id FROM deficiencies WHERE session_id = ?`).all(s.id);
+      for (const d of defIds) {
+        db.prepare(`DELETE FROM poc_steps WHERE deficiency_id = ?`).run(d.id);
+      }
+      db.prepare(`DELETE FROM deficiencies WHERE session_id = ?`).run(s.id);
+      db.prepare(`DELETE FROM sessions WHERE id = ?`).run(s.id);
+    }
+    console.log('  Cleared.\n');
+  }
 
   const insertSession = db.prepare(
     `INSERT INTO sessions (id, file_name, full_text, header_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
@@ -221,36 +200,36 @@ function seed() {
   for (const mock of MOCK_SESSIONS) {
     const sessionId = uuidv4();
     const headerJson = JSON.stringify({
-      providerNumber: mock.facility.provider,
-      facilityName: mock.facility.name,
-      facilityAddress: mock.facility.address,
+      providerNumber: FACILITY.provider,
+      facilityName: FACILITY.name,
+      facilityAddress: FACILITY.address,
       dateSurveyCompleted: mock.surveyDate,
-      building: String(Math.floor(Math.random() * 5) + 1),
-      wing: ['A', 'B', 'C', 'North', 'South'][Math.floor(Math.random() * 5)],
-      accreditingOrg: ['The Joint Commission', 'CARF International', 'DNV Healthcare', ''][Math.floor(Math.random() * 4)],
+      building: FACILITY.building,
+      wing: FACILITY.wing,
+      accreditingOrg: FACILITY.accreditingOrg,
     });
 
-    const updatedAt = mock.completionStatus === 'all'
-      ? new Date(new Date(mock.createdAt).getTime() + 7 * 86400000).toISOString().replace('T', ' ').slice(0, 19)
-      : mock.createdAt;
+    // POC completed ~7 days after session created
+    const updatedAt = new Date(new Date(mock.createdAt).getTime() + 7 * 86400000)
+      .toISOString().replace('T', ' ').slice(0, 19);
 
-    insertSession.run(sessionId, mock.fileName, `(Mock CMS-2567 text for ${mock.facility.name})`, headerJson, mock.createdAt, updatedAt);
+    insertSession.run(
+      sessionId, mock.fileName,
+      `(Mock CMS-2567 survey text for ${FACILITY.name} — ${mock.surveyDate})`,
+      headerJson, mock.createdAt, updatedAt
+    );
 
-    console.log(`  Session: ${mock.facility.name} (${mock.fTags.length} F-Tags)`);
+    console.log(`  Survey ${mock.surveyDate}: ${mock.fTags.join(', ')}`);
 
     for (const fTag of mock.fTags) {
       const defId = uuidv4();
       const tagData = FTAG_DATA[fTag];
       if (!tagData) continue;
 
-      let defStatus;
-      if (mock.completionStatus === 'all') defStatus = 'complete';
-      else if (mock.completionStatus === 'none') defStatus = 'pending';
-      else defStatus = Math.random() > 0.5 ? 'complete' : 'drafting';
-
-      const completionDate = defStatus === 'complete'
-        ? new Date(new Date(mock.createdAt).getTime() + Math.floor(Math.random() * 14 + 3) * 86400000).toISOString().slice(0, 10)
-        : null;
+      // Completion date 5-10 days after session creation
+      const completionDate = new Date(
+        new Date(mock.createdAt).getTime() + (Math.floor(Math.random() * 6) + 5) * 86400000
+      ).toISOString().slice(0, 10);
 
       const summary = tagData.narrative.slice(0, 120) + '...';
       const keyPoints = JSON.stringify([
@@ -260,33 +239,38 @@ function seed() {
         'Monitoring plan established',
       ]);
 
-      insertDef.run(defId, sessionId, fTag, tagData.narrative, tagData.severity, tagData.scope, summary, keyPoints, completionDate, defStatus, mock.createdAt, updatedAt);
+      insertDef.run(
+        defId, sessionId, fTag, tagData.narrative,
+        tagData.severity, tagData.scope, summary, keyPoints,
+        completionDate, 'complete', mock.createdAt, updatedAt
+      );
 
-      // Insert 4 steps
+      // All 4 steps complete
       for (let stepNum = 1; stepNum <= 4; stepNum++) {
         const stepId = uuidv4();
         const stepContent = tagData.steps[stepNum - 1];
-        let stepStatus;
-        if (defStatus === 'complete') stepStatus = 'completed';
-        else if (defStatus === 'drafting') stepStatus = stepNum <= 2 ? 'completed' : 'pending';
-        else stepStatus = 'pending';
-
-        const stepDate = stepStatus === 'completed' ? completionDate : null;
 
         insertStep.run(
           stepId, defId, stepNum, STEP_TITLES[stepNum - 1],
-          stepContent, // ai_suggestion
-          defStatus !== 'pending' ? stepContent : null, // user_content
-          stepDate,
-          stepStatus,
+          stepContent,     // ai_suggestion
+          stepContent,     // user_content (same = accepted)
+          completionDate,  // all steps completed
+          'completed',
           updatedAt
         );
       }
     }
   }
 
-  console.log(`\nSeeded ${MOCK_SESSIONS.length} sessions with ${MOCK_SESSIONS.reduce((s, m) => s + m.fTags.length, 0)} total deficiencies.`);
-  console.log('Done!');
+  const totalDefs = MOCK_SESSIONS.reduce((s, m) => s + m.fTags.length, 0);
+  const uniqueTags = [...new Set(MOCK_SESSIONS.flatMap(m => m.fTags))];
+
+  console.log(`\nSummary:`);
+  console.log(`  Sessions: ${MOCK_SESSIONS.length}`);
+  console.log(`  Deficiencies: ${totalDefs}`);
+  console.log(`  Unique F-Tags: ${uniqueTags.length} (${uniqueTags.join(', ')})`);
+  console.log(`  Completion: 100%`);
+  console.log('\nDone!');
 }
 
 seed();
