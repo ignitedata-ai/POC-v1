@@ -1,0 +1,17 @@
+services:
+  tcs-poc:
+    build: .
+    container_name: tcs-plan-of-correction
+    ports:
+      - "7867:7867"
+    env_file:
+      - .env
+    volumes:
+      # Persist SQLite databases across container restarts
+      - tcs-admin-data:/app/server/data
+      - tcs-user-data:/app/user-app/server/data
+    restart: unless-stopped
+
+volumes:
+  tcs-admin-data:
+  tcs-user-data:

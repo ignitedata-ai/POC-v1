@@ -1,0 +1,20 @@
+{
+  "name": "tcs-poc-server",
+  "version": "1.0.0",
+  "description": "Express + SQLite backend for TCS Template Repository",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node src/index.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.0",
+    "multer": "^2.0.2",
+    "openai": "^6.25.0",
+    "pdfjs-dist": "^3.11.174",
+    "uuid": "^10.0.0"
+  }
+}
